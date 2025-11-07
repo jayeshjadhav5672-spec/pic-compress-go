@@ -146,6 +146,8 @@ const Index = () => {
               fileName={result?.fileName}
               onDownload={handleDownload}
               mode={mode}
+              originalFile={selectedFile || undefined}
+              compressedBlob={result?.blob}
             />
           </div>
         </div>

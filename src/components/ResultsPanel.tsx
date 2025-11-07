@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Download, Package } from "lucide-react";
+import { ImagePreview } from "./ImagePreview";
 
 interface ResultsPanelProps {
   originalSize?: number;
@@ -8,6 +9,8 @@ interface ResultsPanelProps {
   fileName?: string;
   onDownload?: () => void;
   mode: "compress" | "decompress";
+  originalFile?: File;
+  compressedBlob?: Blob;
 }
 
 export const ResultsPanel = ({
@@ -17,6 +20,8 @@ export const ResultsPanel = ({
   fileName,
   onDownload,
   mode,
+  originalFile,
+  compressedBlob,
 }: ResultsPanelProps) => {
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -37,6 +42,14 @@ export const ResultsPanel = ({
 
   return (
     <div className="space-y-6">
+      {/* Image Preview */}
+      <ImagePreview
+        originalFile={originalFile}
+        compressedBlob={compressedBlob}
+        originalSize={originalSize}
+        compressedSize={compressedSize}
+      />
+
       <div className="space-y-4">
         <div className="bg-card/50 rounded-lg p-6 border border-border">
           <h3 className="text-sm font-medium text-muted-foreground mb-2">Original Size</h3>
