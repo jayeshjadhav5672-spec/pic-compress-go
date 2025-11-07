@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Download, Package } from "lucide-react";
-import { ImagePreview } from "./ImagePreview";
+import { MediaPreview } from "./MediaPreview";
 
 interface ResultsPanelProps {
   originalSize?: number;
@@ -42,8 +42,8 @@ export const ResultsPanel = ({
 
   return (
     <div className="space-y-6">
-      {/* Image Preview */}
-      <ImagePreview
+      {/* Media Preview */}
+      <MediaPreview
         originalFile={originalFile}
         compressedBlob={compressedBlob}
         originalSize={originalSize}

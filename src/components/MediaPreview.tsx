@@ -1,25 +1,27 @@
 import { useEffect, useState } from "react";
 
-interface ImagePreviewProps {
+interface MediaPreviewProps {
   originalFile?: File;
   compressedBlob?: Blob;
   originalSize?: number;
   compressedSize?: number;
 }
 
-export const ImagePreview = ({
+export const MediaPreview = ({
   originalFile,
   compressedBlob,
   originalSize,
   compressedSize,
-}: ImagePreviewProps) => {
+}: MediaPreviewProps) => {
   const [originalUrl, setOriginalUrl] = useState<string>("");
   const [compressedUrl, setCompressedUrl] = useState<string>("");
+  const [isVideo, setIsVideo] = useState(false);
 
   useEffect(() => {
     if (originalFile) {
       const url = URL.createObjectURL(originalFile);
       setOriginalUrl(url);
+      setIsVideo(originalFile.type.startsWith('video/'));
       return () => URL.revokeObjectURL(url);
     }
   }, [originalFile]);
@@ -42,10 +44,12 @@ export const ImagePreview = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-semibold text-foreground mb-4">Image Preview</h3>
+      <h3 className="text-xl font-semibold text-foreground mb-4">
+        {isVideo ? 'Video Preview' : 'Image Preview'}
+      </h3>
       
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Original Image */}
+        {/* Original Media */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted-foreground">Original</span>
@@ -56,15 +60,23 @@ export const ImagePreview = ({
             )}
           </div>
           <div className="relative aspect-video bg-card/30 rounded-lg overflow-hidden border border-border">
-            <img
-              src={originalUrl}
-              alt="Original"
-              className="w-full h-full object-contain"
-            />
+            {isVideo ? (
+              <video
+                src={originalUrl}
+                controls
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <img
+                src={originalUrl}
+                alt="Original"
+                className="w-full h-full object-contain"
+              />
+            )}
           </div>
         </div>
 
-        {/* Compressed Image */}
+        {/* Compressed Media */}
         {compressedUrl && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -76,11 +88,19 @@ export const ImagePreview = ({
               )}
             </div>
             <div className="relative aspect-video bg-card/30 rounded-lg overflow-hidden border border-border">
-              <img
-                src={compressedUrl}
-                alt="Compressed"
-                className="w-full h-full object-contain"
-              />
+              {isVideo ? (
+                <video
+                  src={compressedUrl}
+                  controls
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <img
+                  src={compressedUrl}
+                  alt="Compressed"
+                  className="w-full h-full object-contain"
+                />
+              )}
             </div>
           </div>
         )}

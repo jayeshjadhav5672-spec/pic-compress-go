@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { FileUploadZone } from "@/components/FileUploadZone";
 import { AlgorithmSelector, Algorithm } from "@/components/AlgorithmSelector";
 import { ResultsPanel } from "@/components/ResultsPanel";
-import { compressImage, downloadBlob, CompressionResult } from "@/lib/compression";
+import { compressImage, compressVideo, downloadBlob, CompressionResult } from "@/lib/compression";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -33,10 +33,13 @@ const Index = () => {
       return;
     }
 
-    if (!selectedFile.type.startsWith("image/")) {
+    const isImage = selectedFile.type.startsWith("image/");
+    const isVideo = selectedFile.type.startsWith("video/");
+
+    if (!isImage && !isVideo) {
       toast({
         title: "Invalid file type",
-        description: "Please select an image file",
+        description: "Please select an image or video file",
         variant: "destructive",
       });
       return;
@@ -44,7 +47,10 @@ const Index = () => {
 
     setIsProcessing(true);
     try {
-      const compressionResult = await compressImage(selectedFile, algorithm);
+      const compressionResult = isVideo 
+        ? await compressVideo(selectedFile, algorithm)
+        : await compressImage(selectedFile, algorithm);
+      
       setResult(compressionResult);
       toast({
         title: "Compression successful!",
@@ -80,7 +86,7 @@ const Index = () => {
           </h1>
           <p className="text-xl text-muted-foreground">
             {mode === "compress" 
-              ? "Compress your files with advanced algorithms" 
+              ? "Compress images and videos with advanced algorithms" 
               : "Decompress your files"}
           </p>
         </header>

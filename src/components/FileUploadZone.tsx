@@ -62,7 +62,7 @@ export const FileUploadZone = ({ onFileSelect, mode }: FileUploadZoneProps) => {
         <input
           id="file-input"
           type="file"
-          accept={mode === "compress" ? "image/*" : "*"}
+          accept={mode === "compress" ? "image/*,video/*" : "*"}
           onChange={handleFileInput}
           className="hidden"
         />
