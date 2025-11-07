@@ -34,26 +34,57 @@ export async function compressVideo(
 ): Promise<CompressionResult> {
   const ffmpeg = await loadFFmpeg();
   
-  // Quality settings based on algorithm
-  const crfMap = {
-    lz77: 28,  // Best overall
-    rle: 32,   // Faster, larger file
-    bpe: 30,   // Balanced
+  // Advanced compression settings based on algorithm
+  const compressionSettings = {
+    lz77: {
+      crf: 23,        // Best quality (lower = better quality)
+      preset: 'slow', // Better compression
+      videoBitrate: '1M',
+      audioBitrate: '128k',
+    },
+    rle: {
+      crf: 28,        // Faster compression
+      preset: 'fast',
+      videoBitrate: '800k',
+      audioBitrate: '96k',
+    },
+    bpe: {
+      crf: 26,        // Balanced
+      preset: 'medium',
+      videoBitrate: '900k',
+      audioBitrate: '112k',
+    },
   };
 
+  const settings = compressionSettings[algorithm];
   const inputName = 'input.mp4';
   const outputName = 'output.mp4';
   
   try {
     await ffmpeg.writeFile(inputName, await fetchFile(file));
     
+    // Enhanced compression with better settings
     await ffmpeg.exec([
       '-i', inputName,
+      // Video codec with optimal settings
       '-c:v', 'libx264',
-      '-crf', crfMap[algorithm].toString(),
-      '-preset', 'medium',
+      '-crf', settings.crf.toString(),
+      '-preset', settings.preset,
+      '-b:v', settings.videoBitrate,
+      // Optimize for web streaming
+      '-movflags', '+faststart',
+      // Better pixel format for compatibility
+      '-pix_fmt', 'yuv420p',
+      // Scale down if too large (maintains aspect ratio)
+      '-vf', 'scale=\'min(1920,iw)\':\'min(1080,ih)\':force_original_aspect_ratio=decrease',
+      // Audio codec with optimal settings
       '-c:a', 'aac',
-      '-b:a', '128k',
+      '-b:a', settings.audioBitrate,
+      '-ar', '44100',
+      // Optimization flags
+      '-profile:v', 'high',
+      '-level', '4.0',
+      '-threads', '0',
       outputName
     ]);
     
@@ -63,6 +94,10 @@ export async function compressVideo(
     const originalSize = file.size;
     const compressedSize = compressedBlob.size;
     const compressionRatio = ((originalSize - compressedSize) / originalSize) * 100;
+
+    // Clean up
+    await ffmpeg.deleteFile(inputName);
+    await ffmpeg.deleteFile(outputName);
 
     return {
       blob: compressedBlob,
