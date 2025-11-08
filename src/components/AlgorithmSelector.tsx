@@ -12,12 +12,12 @@ const algorithms = [
   {
     id: "lz77" as Algorithm,
     name: "LZ77 (H.264)",
-    description: "Best quality - slower compression",
+    description: "Best quality with slower compression",
   },
   {
     id: "rle" as Algorithm,
     name: "RLE (H.264)",
-    description: "Fast compression - good for simple videos",
+    description: "Fast compression for quick results",
   },
   {
     id: "bpe" as Algorithm,

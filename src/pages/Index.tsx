@@ -1,81 +1,9 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { FileUploadZone } from "@/components/FileUploadZone";
-import { AlgorithmSelector, Algorithm } from "@/components/AlgorithmSelector";
-import { ResultsPanel } from "@/components/ResultsPanel";
-import { compressImage, compressVideo, downloadBlob, CompressionResult } from "@/lib/compression";
-import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImageCompressionSection } from "@/components/ImageCompressionSection";
+import { VideoCompressionSection } from "@/components/VideoCompressionSection";
+import { Image, Video } from "lucide-react";
 
 const Index = () => {
-  const [mode, setMode] = useState<"compress" | "decompress">("compress");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [algorithm, setAlgorithm] = useState<Algorithm>("lz77");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [result, setResult] = useState<CompressionResult | null>(null);
-  const { toast } = useToast();
-
-  const handleFileSelect = (file: File) => {
-    setSelectedFile(file);
-    setResult(null);
-    toast({
-      title: "File selected",
-      description: `${file.name} (${(file.size / 1024).toFixed(2)} KB)`,
-    });
-  };
-
-  const handleCompress = async () => {
-    if (!selectedFile) {
-      toast({
-        title: "No file selected",
-        description: "Please select a file to compress",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const isImage = selectedFile.type.startsWith("image/");
-    const isVideo = selectedFile.type.startsWith("video/");
-
-    if (!isImage && !isVideo) {
-      toast({
-        title: "Invalid file type",
-        description: "Please select an image or video file",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      const compressionResult = isVideo 
-        ? await compressVideo(selectedFile, algorithm)
-        : await compressImage(selectedFile, algorithm);
-      
-      setResult(compressionResult);
-      toast({
-        title: "Compression successful!",
-        description: `File compressed by ${compressionResult.compressionRatio.toFixed(1)}%`,
-      });
-    } catch (error) {
-      toast({
-        title: "Compression failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleDownload = () => {
-    if (result) {
-      downloadBlob(result.blob, result.fileName);
-      toast({
-        title: "Download started",
-        description: `Downloading ${result.fileName}`,
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,86 +13,30 @@ const Index = () => {
             Smart Compressor
           </h1>
           <p className="text-xl text-muted-foreground">
-            {mode === "compress" 
-              ? "Compress images and videos with advanced algorithms" 
-              : "Decompress your files"}
+            Professional image and video compression with advanced algorithms
           </p>
         </header>
 
-        <div className="flex justify-center gap-4 mb-12">
-          <Button
-            variant={mode === "compress" ? "default" : "outline"}
-            onClick={() => {
-              setMode("compress");
-              setSelectedFile(null);
-              setResult(null);
-            }}
-            size="lg"
-            className="px-8"
-          >
-            Compress
-          </Button>
-          <Button
-            variant={mode === "decompress" ? "default" : "outline"}
-            onClick={() => {
-              setMode("decompress");
-              setSelectedFile(null);
-              setResult(null);
-            }}
-            size="lg"
-            className="px-8"
-          >
-            Decompress
-          </Button>
-        </div>
+        <Tabs defaultValue="image" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+            <TabsTrigger value="image" className="flex items-center gap-2">
+              <Image className="w-4 h-4" />
+              Image Compression
+            </TabsTrigger>
+            <TabsTrigger value="video" className="flex items-center gap-2">
+              <Video className="w-4 h-4" />
+              Video Compression
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          <div className="space-y-8">
-            <div className="bg-card rounded-xl p-6 border border-border">
-              <FileUploadZone onFileSelect={handleFileSelect} mode={mode} />
-            </div>
+          <TabsContent value="image">
+            <ImageCompressionSection />
+          </TabsContent>
 
-            {mode === "compress" && (
-              <div className="bg-card rounded-xl p-6 border border-border">
-                <AlgorithmSelector selected={algorithm} onSelect={setAlgorithm} />
-              </div>
-            )}
-
-            <Button
-              onClick={handleCompress}
-              disabled={!selectedFile || isProcessing || mode === "decompress"}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-              size="lg"
-            >
-              {isProcessing 
-                ? "Processing..." 
-                : mode === "compress" 
-                ? "Compress File" 
-                : "Decompress File"}
-            </Button>
-          </div>
-
-          <div className="bg-card rounded-xl p-6 border border-border">
-            <ResultsPanel
-              originalSize={result?.originalSize}
-              compressedSize={result?.compressedSize}
-              compressionRatio={result?.compressionRatio}
-              fileName={result?.fileName}
-              onDownload={handleDownload}
-              mode={mode}
-              originalFile={selectedFile || undefined}
-              compressedBlob={result?.blob}
-            />
-          </div>
-        </div>
-
-        {mode === "decompress" && (
-          <div className="mt-8 text-center">
-            <p className="text-muted-foreground">
-              Note: Decompression feature coming soon. Currently, only compression is available.
-            </p>
-          </div>
-        )}
+          <TabsContent value="video">
+            <VideoCompressionSection />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

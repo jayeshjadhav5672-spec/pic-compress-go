@@ -5,9 +5,18 @@ import { Upload } from "lucide-react";
 interface FileUploadZoneProps {
   onFileSelect: (file: File) => void;
   mode: "compress" | "decompress";
+  acceptedTypes?: string;
+  title?: string;
+  description?: string;
 }
 
-export const FileUploadZone = ({ onFileSelect, mode }: FileUploadZoneProps) => {
+export const FileUploadZone = ({ 
+  onFileSelect, 
+  mode, 
+  acceptedTypes = "image/*,video/*",
+  title,
+  description 
+}: FileUploadZoneProps) => {
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -39,7 +48,7 @@ export const FileUploadZone = ({ onFileSelect, mode }: FileUploadZoneProps) => {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold text-foreground">
-        {mode === "compress" ? "Select File" : "Select Compressed File"}
+        {title || (mode === "compress" ? "Select File" : "Select Compressed File")}
       </h2>
       
       <div
@@ -49,9 +58,9 @@ export const FileUploadZone = ({ onFileSelect, mode }: FileUploadZoneProps) => {
       >
         <Upload className="w-12 h-12 text-primary" />
         <p className="text-foreground font-medium">
-          {mode === "compress" 
+          {description || (mode === "compress" 
             ? "Drag and drop your file here" 
-            : "Drag and drop your compressed file here"}
+            : "Drag and drop your compressed file here")}
         </p>
         <p className="text-muted-foreground">or</p>
         <label htmlFor="file-input">
@@ -62,7 +71,7 @@ export const FileUploadZone = ({ onFileSelect, mode }: FileUploadZoneProps) => {
         <input
           id="file-input"
           type="file"
-          accept={mode === "compress" ? "image/*,video/*" : "*"}
+          accept={acceptedTypes}
           onChange={handleFileInput}
           className="hidden"
         />
