@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Download, Package } from "lucide-react";
 import { MediaPreview } from "./MediaPreview";
+import { BeforeAfterVideoComparison } from "./BeforeAfterVideoComparison";
 
 interface ResultsPanelProps {
   originalSize?: number;
@@ -42,13 +43,23 @@ export const ResultsPanel = ({
 
   return (
     <div className="space-y-6">
-      {/* Media Preview */}
-      <MediaPreview
-        originalFile={originalFile}
-        compressedBlob={compressedBlob}
-        originalSize={originalSize}
-        compressedSize={compressedSize}
-      />
+      {/* Before/After Video Comparison for videos */}
+      {originalFile && compressedBlob && originalFile.type.startsWith('video/') && (
+        <BeforeAfterVideoComparison
+          originalFile={originalFile}
+          compressedBlob={compressedBlob}
+        />
+      )}
+
+      {/* Media Preview for images or as fallback */}
+      {originalFile && compressedBlob && originalFile.type.startsWith('image/') && (
+        <MediaPreview
+          originalFile={originalFile}
+          compressedBlob={compressedBlob}
+          originalSize={originalSize}
+          compressedSize={compressedSize}
+        />
+      )}
 
       <div className="space-y-4">
         <div className="bg-card/50 rounded-lg p-6 border border-border">
