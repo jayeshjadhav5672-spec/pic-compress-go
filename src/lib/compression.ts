@@ -2,7 +2,7 @@ import imageCompression from 'browser-image-compression';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
-export type Algorithm = "lz77" | "rle" | "bpe";
+export type Algorithm = "lz77" | "rle" | "bpe" | "h265";
 
 export interface CompressionResult {
   blob: Blob;
@@ -37,22 +37,32 @@ export async function compressVideo(
   // Advanced compression settings based on algorithm
   const compressionSettings = {
     lz77: {
+      codec: 'libx264',
       crf: 23,        // Best quality (lower = better quality)
       preset: 'slow', // Better compression
       videoBitrate: '1M',
       audioBitrate: '128k',
     },
     rle: {
+      codec: 'libx264',
       crf: 28,        // Faster compression
       preset: 'fast',
       videoBitrate: '800k',
       audioBitrate: '96k',
     },
     bpe: {
+      codec: 'libx264',
       crf: 26,        // Balanced
       preset: 'medium',
       videoBitrate: '900k',
       audioBitrate: '112k',
+    },
+    h265: {
+      codec: 'libx265',
+      crf: 28,        // H.265 with CRF 28 gives similar quality to H.264 CRF 23
+      preset: 'medium', // Balanced for H.265
+      videoBitrate: '700k', // 30-50% smaller than H.264
+      audioBitrate: '128k',
     },
   };
 
@@ -64,10 +74,10 @@ export async function compressVideo(
     await ffmpeg.writeFile(inputName, await fetchFile(file));
     
     // Enhanced compression with better settings
-    await ffmpeg.exec([
+    const ffmpegArgs = [
       '-i', inputName,
       // Video codec with optimal settings
-      '-c:v', 'libx264',
+      '-c:v', settings.codec,
       '-crf', settings.crf.toString(),
       '-preset', settings.preset,
       '-b:v', settings.videoBitrate,
@@ -81,12 +91,18 @@ export async function compressVideo(
       '-c:a', 'aac',
       '-b:a', settings.audioBitrate,
       '-ar', '44100',
-      // Optimization flags
-      '-profile:v', 'high',
-      '-level', '4.0',
-      '-threads', '0',
-      outputName
-    ]);
+    ];
+
+    // Add codec-specific optimization flags
+    if (settings.codec === 'libx264') {
+      ffmpegArgs.push('-profile:v', 'high', '-level', '4.0');
+    } else if (settings.codec === 'libx265') {
+      ffmpegArgs.push('-tag:v', 'hvc1'); // Better compatibility for H.265
+    }
+
+    ffmpegArgs.push('-threads', '0', outputName);
+    
+    await ffmpeg.exec(ffmpegArgs);
     
     const data = await ffmpeg.readFile(outputName);
     const compressedBlob = new Blob([new Uint8Array(data as Uint8Array)], { type: 'video/mp4' });
@@ -118,9 +134,10 @@ export async function compressImage(
 ): Promise<CompressionResult> {
   // Different quality settings based on algorithm
   const qualityMap = {
-    lz77: 0.6,  // Best overall
-    rle: 0.7,   // Good for repetitive patterns
-    bpe: 0.65,  // Balanced
+    lz77: 0.6,   // Best overall
+    rle: 0.7,    // Good for repetitive patterns
+    bpe: 0.65,   // Balanced
+    h265: 0.6,   // High quality for images
   };
 
   const options = {
