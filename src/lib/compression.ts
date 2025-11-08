@@ -2,7 +2,7 @@ import imageCompression from 'browser-image-compression';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
-export type Algorithm = "lz77" | "rle" | "bpe" | "h265";
+export type Algorithm = "lz77" | "rle" | "bpe";
 
 export interface CompressionResult {
   blob: Blob;
@@ -20,10 +20,21 @@ async function loadFFmpeg() {
   ffmpeg = new FFmpeg();
   const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
   
+  // Add logging to track FFmpeg operations
+  ffmpeg.on('log', ({ message }) => {
+    console.log('[FFmpeg]:', message);
+  });
+
+  ffmpeg.on('progress', ({ progress, time }) => {
+    console.log('[FFmpeg Progress]:', `${Math.round(progress * 100)}%`, `Time: ${time}ms`);
+  });
+  
+  console.log('[FFmpeg] Loading FFmpeg WASM...');
   await ffmpeg.load({
     coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
     wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
   });
+  console.log('[FFmpeg] FFmpeg loaded successfully');
   
   return ffmpeg;
 }
@@ -37,32 +48,22 @@ export async function compressVideo(
   // Advanced compression settings based on algorithm
   const compressionSettings = {
     lz77: {
-      codec: 'libx264',
       crf: 23,        // Best quality (lower = better quality)
       preset: 'slow', // Better compression
       videoBitrate: '1M',
       audioBitrate: '128k',
     },
     rle: {
-      codec: 'libx264',
       crf: 28,        // Faster compression
       preset: 'fast',
       videoBitrate: '800k',
       audioBitrate: '96k',
     },
     bpe: {
-      codec: 'libx264',
       crf: 26,        // Balanced
       preset: 'medium',
       videoBitrate: '900k',
       audioBitrate: '112k',
-    },
-    h265: {
-      codec: 'libx265',
-      crf: 28,        // H.265 with CRF 28 gives similar quality to H.264 CRF 23
-      preset: 'medium', // Balanced for H.265
-      videoBitrate: '700k', // 30-50% smaller than H.264
-      audioBitrate: '128k',
     },
   };
 
@@ -71,13 +72,17 @@ export async function compressVideo(
   const outputName = 'output.mp4';
   
   try {
+    console.log('[Video Compression] Starting compression with algorithm:', algorithm);
+    console.log('[Video Compression] Original file size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+    
     await ffmpeg.writeFile(inputName, await fetchFile(file));
+    console.log('[Video Compression] File written to FFmpeg');
     
     // Enhanced compression with better settings
     const ffmpegArgs = [
       '-i', inputName,
       // Video codec with optimal settings
-      '-c:v', settings.codec,
+      '-c:v', 'libx264',
       '-crf', settings.crf.toString(),
       '-preset', settings.preset,
       '-b:v', settings.videoBitrate,
@@ -91,18 +96,16 @@ export async function compressVideo(
       '-c:a', 'aac',
       '-b:a', settings.audioBitrate,
       '-ar', '44100',
+      // Optimization flags for H.264
+      '-profile:v', 'high',
+      '-level', '4.0',
+      '-threads', '0',
+      outputName
     ];
-
-    // Add codec-specific optimization flags
-    if (settings.codec === 'libx264') {
-      ffmpegArgs.push('-profile:v', 'high', '-level', '4.0');
-    } else if (settings.codec === 'libx265') {
-      ffmpegArgs.push('-tag:v', 'hvc1'); // Better compatibility for H.265
-    }
-
-    ffmpegArgs.push('-threads', '0', outputName);
     
+    console.log('[Video Compression] Running FFmpeg with args:', ffmpegArgs.join(' '));
     await ffmpeg.exec(ffmpegArgs);
+    console.log('[Video Compression] FFmpeg execution completed');
     
     const data = await ffmpeg.readFile(outputName);
     const compressedBlob = new Blob([new Uint8Array(data as Uint8Array)], { type: 'video/mp4' });
@@ -110,6 +113,9 @@ export async function compressVideo(
     const originalSize = file.size;
     const compressedSize = compressedBlob.size;
     const compressionRatio = ((originalSize - compressedSize) / originalSize) * 100;
+
+    console.log('[Video Compression] Compressed size:', (compressedSize / 1024 / 1024).toFixed(2), 'MB');
+    console.log('[Video Compression] Compression ratio:', compressionRatio.toFixed(2), '%');
 
     // Clean up
     await ffmpeg.deleteFile(inputName);
@@ -123,8 +129,11 @@ export async function compressVideo(
       fileName: `compressed_${algorithm}_${file.name}`,
     };
   } catch (error) {
-    console.error('Video compression error:', error);
-    throw new Error('Failed to compress video');
+    console.error('[Video Compression] Error details:', error);
+    if (error instanceof Error) {
+      throw new Error(`Video compression failed: ${error.message}`);
+    }
+    throw new Error('Failed to compress video. Please check console for details.');
   }
 }
 
@@ -137,7 +146,6 @@ export async function compressImage(
     lz77: 0.6,   // Best overall
     rle: 0.7,    // Good for repetitive patterns
     bpe: 0.65,   // Balanced
-    h265: 0.6,   // High quality for images
   };
 
   const options = {

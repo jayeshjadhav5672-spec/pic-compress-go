@@ -1,7 +1,7 @@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
-export type Algorithm = "lz77" | "rle" | "bpe" | "h265";
+export type Algorithm = "lz77" | "rle" | "bpe";
 
 interface AlgorithmSelectorProps {
   selected: Algorithm;
@@ -11,23 +11,18 @@ interface AlgorithmSelectorProps {
 const algorithms = [
   {
     id: "lz77" as Algorithm,
-    name: "LZ77",
-    description: "Best overall compression",
+    name: "LZ77 (H.264)",
+    description: "Best quality - slower compression",
   },
   {
     id: "rle" as Algorithm,
-    name: "RLE",
-    description: "Best for repetitive data",
+    name: "RLE (H.264)",
+    description: "Fast compression - good for simple videos",
   },
   {
     id: "bpe" as Algorithm,
-    name: "BPE",
-    description: "Good for text files",
-  },
-  {
-    id: "h265" as Algorithm,
-    name: "H.265 (HEVC)",
-    description: "Best for 4K/UHD video (High efficiency)",
+    name: "BPE (H.264)",
+    description: "Balanced quality and speed",
   },
 ];
 
