@@ -10,7 +10,7 @@ const Index = () => {
             Smart Compressor
           </h1>
           <p className="text-xl text-muted-foreground">
-            Professional image compression with advanced algorithms
+            Professional image and PDF compression with advanced algorithms
           </p>
         </header>
 

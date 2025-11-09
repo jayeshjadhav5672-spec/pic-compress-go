@@ -1,6 +1,7 @@
 import imageCompression from 'browser-image-compression';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { PDFDocument } from 'pdf-lib';
 
 export type Algorithm = "lz77" | "rle" | "bpe";
 
@@ -173,6 +174,57 @@ export async function compressImage(
   } catch (error) {
     console.error('Compression error:', error);
     throw new Error('Failed to compress image');
+  }
+}
+
+export async function compressPDF(
+  file: File,
+  algorithm: Algorithm
+): Promise<CompressionResult> {
+  try {
+    console.log('[PDF Compression] Starting compression with algorithm:', algorithm);
+    console.log('[PDF Compression] Original file size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+    
+    // Compression settings based on algorithm
+    const compressionSettings = {
+      lz77: { objectsPerTick: 50, useObjectStreams: true },
+      rle: { objectsPerTick: 100, useObjectStreams: false },
+      bpe: { objectsPerTick: 75, useObjectStreams: true },
+    };
+    
+    const settings = compressionSettings[algorithm];
+    
+    // Save with compression settings
+    const compressedPdfBytes = await pdfDoc.save({
+      useObjectStreams: settings.useObjectStreams,
+      objectsPerTick: settings.objectsPerTick,
+    });
+    
+    const compressedBlob = new Blob([new Uint8Array(compressedPdfBytes)], { type: 'application/pdf' });
+    
+    const originalSize = file.size;
+    const compressedSize = compressedBlob.size;
+    const compressionRatio = ((originalSize - compressedSize) / originalSize) * 100;
+    
+    console.log('[PDF Compression] Compressed size:', (compressedSize / 1024 / 1024).toFixed(2), 'MB');
+    console.log('[PDF Compression] Compression ratio:', compressionRatio.toFixed(2), '%');
+    
+    return {
+      blob: compressedBlob,
+      originalSize,
+      compressedSize,
+      compressionRatio,
+      fileName: `compressed_${algorithm}_${file.name}`,
+    };
+  } catch (error) {
+    console.error('[PDF Compression] Error details:', error);
+    if (error instanceof Error) {
+      throw new Error(`PDF compression failed: ${error.message}`);
+    }
+    throw new Error('Failed to compress PDF. Please check console for details.');
   }
 }
 

@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { FileUploadZone } from "@/components/FileUploadZone";
 import { AlgorithmSelector, Algorithm } from "@/components/AlgorithmSelector";
 import { ResultsPanel } from "@/components/ResultsPanel";
-import { compressImage, downloadBlob, CompressionResult } from "@/lib/compression";
+import { compressImage, compressPDF, downloadBlob, CompressionResult } from "@/lib/compression";
 import { useToast } from "@/hooks/use-toast";
-import { Image } from "lucide-react";
+import { FileArchive } from "lucide-react";
 
 export const ImageCompressionSection = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -15,10 +15,13 @@ export const ImageCompressionSection = () => {
   const { toast } = useToast();
 
   const handleFileSelect = (file: File) => {
-    if (!file.type.startsWith("image/")) {
+    const isImage = file.type.startsWith("image/");
+    const isPDF = file.type === "application/pdf";
+    
+    if (!isImage && !isPDF) {
       toast({
         title: "Invalid file type",
-        description: "Please select an image file (JPG, PNG, WebP, etc.)",
+        description: "Please select an image (JPG, PNG, WebP) or PDF file",
         variant: "destructive",
       });
       return;
@@ -27,7 +30,7 @@ export const ImageCompressionSection = () => {
     setSelectedFile(file);
     setResult(null);
     toast({
-      title: "Image selected",
+      title: `${isPDF ? "PDF" : "Image"} selected`,
       description: `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
     });
   };
@@ -36,7 +39,7 @@ export const ImageCompressionSection = () => {
     if (!selectedFile) {
       toast({
         title: "No file selected",
-        description: "Please select an image to compress",
+        description: "Please select a file to compress",
         variant: "destructive",
       });
       return;
@@ -44,12 +47,15 @@ export const ImageCompressionSection = () => {
 
     setIsProcessing(true);
     try {
-      const compressionResult = await compressImage(selectedFile, algorithm);
+      const isPDF = selectedFile.type === "application/pdf";
+      const compressionResult = isPDF 
+        ? await compressPDF(selectedFile, algorithm)
+        : await compressImage(selectedFile, algorithm);
       
       setResult(compressionResult);
       toast({
         title: "Compression successful!",
-        description: `Image compressed by ${compressionResult.compressionRatio.toFixed(1)}%`,
+        description: `${isPDF ? "PDF" : "Image"} compressed by ${compressionResult.compressionRatio.toFixed(1)}%`,
       });
     } catch (error) {
       toast({
@@ -76,11 +82,11 @@ export const ImageCompressionSection = () => {
     <div className="animate-fade-in">
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-          <Image className="w-8 h-8 text-primary" />
+          <FileArchive className="w-8 h-8 text-primary" />
         </div>
-        <h2 className="text-3xl font-bold text-foreground mb-2">Image Compression</h2>
+        <h2 className="text-3xl font-bold text-foreground mb-2">File Compression</h2>
         <p className="text-muted-foreground">
-          Compress your images with advanced algorithms while maintaining quality
+          Compress images and PDFs with advanced algorithms while maintaining quality
         </p>
       </div>
 
@@ -90,9 +96,9 @@ export const ImageCompressionSection = () => {
             <FileUploadZone 
               onFileSelect={handleFileSelect} 
               mode="compress"
-              acceptedTypes="image/*"
-              title="Select Image"
-              description="Drag and drop your image here"
+              acceptedTypes="image/*,application/pdf"
+              title="Select Image or PDF"
+              description="Drag and drop your file here"
             />
           </div>
 
@@ -106,7 +112,7 @@ export const ImageCompressionSection = () => {
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             size="lg"
           >
-            {isProcessing ? "Compressing..." : "Compress Image"}
+            {isProcessing ? "Compressing..." : "Compress File"}
           </Button>
         </div>
 
