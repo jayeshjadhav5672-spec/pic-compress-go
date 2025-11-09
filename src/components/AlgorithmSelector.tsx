@@ -11,17 +11,17 @@ interface AlgorithmSelectorProps {
 const algorithms = [
   {
     id: "lz77" as Algorithm,
-    name: "LZ77 (H.264)",
+    name: "LZ77",
     description: "Best quality with slower compression",
   },
   {
     id: "rle" as Algorithm,
-    name: "RLE (H.264)",
+    name: "RLE",
     description: "Fast compression for quick results",
   },
   {
     id: "bpe" as Algorithm,
-    name: "BPE (H.264)",
+    name: "BPE",
     description: "Balanced quality and speed",
   },
 ];

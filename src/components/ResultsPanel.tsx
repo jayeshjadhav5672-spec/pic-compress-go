@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Download, Package } from "lucide-react";
 import { MediaPreview } from "./MediaPreview";
-import { BeforeAfterVideoComparison } from "./BeforeAfterVideoComparison";
 
 interface ResultsPanelProps {
   originalSize?: number;
@@ -43,16 +42,8 @@ export const ResultsPanel = ({
 
   return (
     <div className="space-y-6">
-      {/* Before/After Video Comparison for videos */}
-      {originalFile && compressedBlob && originalFile.type.startsWith('video/') && (
-        <BeforeAfterVideoComparison
-          originalFile={originalFile}
-          compressedBlob={compressedBlob}
-        />
-      )}
-
-      {/* Media Preview for images or as fallback */}
-      {originalFile && compressedBlob && originalFile.type.startsWith('image/') && (
+      {/* Media Preview for images */}
+      {originalFile && compressedBlob && (
         <MediaPreview
           originalFile={originalFile}
           compressedBlob={compressedBlob}
